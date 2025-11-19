@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f0f0f0; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 1.5rem;
+            color: #333;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Generating Scene...</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        
+        const scene = new THREE.Scene();
+        
+        scene.fog = new THREE.FogExp2(0xdfebf5, 0.02);
+        scene.background = new THREE.Color(0xdfebf5);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(18, 12, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; 
+        controls.minDistance = 5;
+        controls.maxDistance = 50;
+
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(50, 100, 50);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 500;
+        dirLight.shadow.camera.left = -50;
+        dirLight.shadow.camera.right = 50;
+        dirLight.shadow.camera.top = 50;
+        dirLight.shadow.camera.bottom = -50;
+        scene.add(dirLight);
+
+        
+        const redMat = new THREE.MeshStandardMaterial({ color: 0x8B0000, roughness: 0.7 });
+        const darkRoofMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.9 });
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x5D4037, roughness: 0.8 });
+        const goldMat = new THREE.MeshStandardMaterial({ color: 0xFFD700, metalness: 0.6, roughness: 0.3 });
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, roughness: 1.0 });
+        
+        const windowMat = new THREE.MeshStandardMaterial({ color: 0xFFFFE0, roughness: 0.5, emissive: 0xFFFFE0, emissiveIntensity: 0.2 });
+        
+        
+        const groundGeo = new THREE.PlaneGeometry(200, 200);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x7C9473, roughness: 1 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        
+        
+        function createCurvedRoof(width, height) {
+            const group = new THREE.Group();
+            const steps = 4; 
+            const stepHeight = height / steps;
+            
+            let currentY = 0;
+            let currentWidth = width;
+            
+            for(let i=0; i<steps; i++) {
+                
+                const nextWidth = width * (1 - ((i + 1) / steps) * 0.85); 
+                
+                
+                const geometry = new THREE.CylinderGeometry(nextWidth / 1.414, currentWidth / 1.414, stepHeight, 4);
+                const mesh = new THREE.Mesh(geometry, darkRoofMat);
+                mesh.position.y = currentY + stepHeight/2;
+                mesh.rotation.y = Math.PI / 4;
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                group.add(mesh);
+
+                currentY += stepHeight;
+                currentWidth = nextWidth;
+            }
+            return group;
+        }
+
+        
+        function createPagoda(x, z) {
+            const pagodaGroup = new THREE.Group();
+            pagodaGroup.position.set(x, 0, z);
+
+            
+            const baseGeo = new THREE.BoxGeometry(14, 0.8, 14);
+            const base = new THREE.Mesh(baseGeo, stoneMat);
+            base.position.y = 0.4;
+            base.receiveShadow = true;
+            base.castShadow = true;
+            pagodaGroup.add(base);
+
+            const baseGeo2 = new THREE.BoxGeometry(12, 0.6, 12);
+            const base2 = new THREE.Mesh(baseGeo2, stoneMat);
+            base2.position.y = 1.1;
+            base2.receiveShadow = true;
+            base2.castShadow = true;
+            pagodaGroup.add(base2);
+
+            let currentY = 1.4;
+            const levels = 3;
+            let size = 10;
+
+            for(let i = 0; i < levels; i++) {
+                const levelHeight = 2.5; 
+                
+                
+                const coreWidth = size * 0.55;
+                const coreGeo = new THREE.BoxGeometry(coreWidth, levelHeight, coreWidth);
+                const core = new THREE.Mesh(coreGeo, redMat);
+                core.position.y = currentY + levelHeight / 2;
+                core.castShadow = true;
+                core.receiveShadow = true;
+                pagodaGroup.add(core);
+
+                
+                const pillarWidth = 0.4;
+                const pillarGeo = new THREE.BoxGeometry(pillarWidth, levelHeight, pillarWidth);
+                const pDist = coreWidth / 2 + 0.05;
+                
+                const pillarsPos = [
+                    [pDist, pDist], [-pDist, pDist], [pDist, -pDist], [-pDist, -pDist]
+                ];
+
+                pillarsPos.forEach(pos => {
+                    const p = new THREE.Mesh(pillarGeo, redMat);
+                    p.position.set(pos[0], currentY + levelHeight/2, pos[1]);
+                    p.receiveShadow = true;
+                    p.castShadow = true;
+                    pagodaGroup.add(p);
+                });
+
+                
+                const winWidth = coreWidth * 0.5;
+                const winHeight = levelHeight * 0.5;
+                const winGeo = new THREE.BoxGeometry(winWidth, winHeight, 0.1);
+                const barGeo = new THREE.BoxGeometry(winWidth, 0.15, 0.15); 
+                const vBarGeo = new THREE.BoxGeometry(0.15, winHeight, 0.15); 
+
+                
+                for(let side=0; side<4; side++) {
+                    
+                    if (i === 0 && side === 0) continue;
+
+                    const winGroup = new THREE.Group();
+                    
+                    
+                    const win = new THREE.Mesh(winGeo, windowMat);
+                    winGroup.add(win);
+
+                    
+                    const hBar = new THREE.Mesh(barGeo, woodMat);
+                    winGroup.add(hBar);
+                    const vBar = new THREE.Mesh(vBarGeo, woodMat);
+                    winGroup.add(vBar);
+
+                    
+                    const offset = coreWidth/2 + 0.02; 
+                    const yPos = currentY + levelHeight/2;
+
+                    if (side === 0) { 
+                        winGroup.position.set(0, yPos, offset);
+                    } else if (side === 1) { 
+                        winGroup.position.set(offset, yPos, 0);
+                        winGroup.rotation.y = Math.PI / 2;
+                    } else if (side === 2) { 
+                        winGroup.position.set(0, yPos, -offset);
+                        winGroup.rotation.y = Math.PI;
+                    } else if (side === 3) { 
+                        winGroup.position.set(-offset, yPos, 0);
+                        winGroup.rotation.y = -Math.PI / 2;
+                    }
+                    
+                    pagodaGroup.add(winGroup);
+                }
+
+                
+                const balconyWidth = size * 0.8;
+                const balconyGeo = new THREE.BoxGeometry(balconyWidth, 0.2, balconyWidth);
+                const balcony = new THREE.Mesh(balconyGeo, woodMat);
+                balcony.position.y = currentY;
+                balcony.receiveShadow = true;
+                pagodaGroup.add(balcony);
+                
+                
+                if (i > 0) {
+                    const railHeight = 0.6;
+                    const rThick = 0.1;
+                    const rGeoH = new THREE.BoxGeometry(balconyWidth, 0.1, rThick);
+                    const rGeoV = new THREE.BoxGeometry(rThick, 0.1, balconyWidth);
+                    
+                    const r1 = new THREE.Mesh(rGeoH, redMat); r1.position.set(0, currentY + railHeight, balconyWidth/2 - rThick/2);
+                    const r2 = new THREE.Mesh(rGeoH, redMat); r2.position.set(0, currentY + railHeight, -balconyWidth/2 + rThick/2);
+                    const r3 = new THREE.Mesh(rGeoV, redMat); r3.position.set(balconyWidth/2 - rThick/2, currentY + railHeight, 0);
+                    const r4 = new THREE.Mesh(rGeoV, redMat); r4.position.set(-balconyWidth/2 + rThick/2, currentY + railHeight, 0);
+                    
+                    pagodaGroup.add(r1, r2, r3, r4);
+                }
+
+
+                
+                if(i === 0) {
+                    const doorGeo = new THREE.BoxGeometry(1.5, 2.0, 0.2);
+                    const doorFrame = new THREE.Mesh(doorGeo, woodMat);
+                    doorFrame.position.set(0, currentY + 1.0, coreWidth/2 + 0.1);
+                    pagodaGroup.add(doorFrame);
+                }
+
+                
+                const roofWidth = size * 1.3;
+                const roofHeight = 1.8; 
+                
+                const curvedRoof = createCurvedRoof(roofWidth, roofHeight);
+                
+                curvedRoof.position.y = currentY + levelHeight;
+                pagodaGroup.add(curvedRoof);
+
+                currentY += levelHeight + 0.8; 
+                size *= 0.75; 
+            }
+
+            
+            const spireBaseGeo = new THREE.BoxGeometry(1, 0.5, 1);
+            const spireBase = new THREE.Mesh(spireBaseGeo, darkRoofMat);
+            spireBase.position.y = currentY;
+            pagodaGroup.add(spireBase);
+
+            const spireGeo = new THREE.CylinderGeometry(0.05, 0.3, 3, 8);
+            const spire = new THREE.Mesh(spireGeo, goldMat);
+            spire.position.y = currentY + 1.5;
+            pagodaGroup.add(spire);
+
+            scene.add(pagodaGroup);
+        }
+
+        createPagoda(0, 0);
+
+        
+        function createTree(x, z, scale = 1) {
+            const treeGroup = new THREE.Group();
+            treeGroup.position.set(x, 0, z);
+            treeGroup.scale.set(scale, scale, scale);
+
+            
+            const trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 6);
+            const trunk = new THREE.Mesh(trunkGeo, woodMat);
+            trunk.position.y = 2;
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+            treeGroup.add(trunk);
+
+            
+            const leaveMat = new THREE.MeshStandardMaterial({ color: 0xffb7c5, flatShading: true });
+            
+            const positions = [
+                {x:0, y:4, z:0, s: 2.5},
+                {x:1, y:5, z:1, s: 2},
+                {x:-1, y:4.5, z:-1, s: 2},
+                {x:1, y:4.2, z:-0.5, s: 1.8},
+                {x:-0.5, y:5.2, z:1, s: 1.5},
+            ];
+
+            positions.forEach(pos => {
+                const geo = new THREE.DodecahedronGeometry(pos.s);
+                const mesh = new THREE.Mesh(geo, leaveMat);
+                mesh.position.set(pos.x, pos.y, pos.z);
+                mesh.castShadow = true;
+                treeGroup.add(mesh);
+            });
+
+            scene.add(treeGroup);
+        }
+
+        
+        const treePositions = [
+            [15, 10], [-12, 15], [12, -12], [-15, -10],
+            [25, 5], [-20, 8], [8, 22], [-5, -20]
+        ];
+        
+        treePositions.forEach(pos => {
+            const scale = 0.8 + Math.random() * 0.5;
+            createTree(pos[0], pos[1], scale);
+        });
+
+        
+        const petalCount = 1000;
+        const petalGeo = new THREE.BufferGeometry();
+        const petalPositions = [];
+        const petalVelocities = [];
+
+        for(let i=0; i<petalCount; i++) {
+            petalPositions.push(
+                (Math.random() - 0.5) * 60,
+                Math.random() * 30,
+                (Math.random() - 0.5) * 60
+            );
+            petalVelocities.push(
+                (Math.random() - 0.5) * 0.05, 
+                - (0.02 + Math.random() * 0.05), 
+                (Math.random() - 0.5) * 0.05 
+            );
+        }
+
+        petalGeo.setAttribute('position', new THREE.Float32BufferAttribute(petalPositions, 3));
+        const petalMat = new THREE.PointsMaterial({
+            color: 0xffc0cb,
+            size: 0.3,
+            transparent: true,
+            opacity: 0.8
+        });
+        const particleSystem = new THREE.Points(petalGeo, petalMat);
+        scene.add(particleSystem);
+
+
+        
+        const loading = document.getElementById('loading');
+        let loaded = false;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if(!loaded) {
+                loading.style.opacity = 0;
+                loaded = true;
+            }
+
+            controls.update();
+
+            
+            const positions = particleSystem.geometry.attributes.position.array;
+            for(let i=0; i < petalCount; i++) {
+                const yIdx = i * 3 + 1;
+                
+                
+                positions[yIdx] += petalVelocities[i * 3 + 1];
+                
+                
+                positions[i * 3] += Math.sin(Date.now() * 0.001 + i) * 0.01;
+                positions[i * 3 + 2] += Math.cos(Date.now() * 0.001 + i) * 0.01;
+
+                
+                if(positions[yIdx] < 0) {
+                    positions[yIdx] = 30;
+                    positions[i*3] = (Math.random() - 0.5) * 60;
+                    positions[i*3+2] = (Math.random() - 0.5) * 60;
+                }
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
+</body>
+</html>
