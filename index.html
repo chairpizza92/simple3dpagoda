@@ -20,7 +20,6 @@
             z-index: 0;
         }
 
-        /* UI Overlay for Features */
         #ui-container {
             position: absolute;
             bottom: 30px;
@@ -94,7 +93,7 @@
             background: #fff;
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-            color: #8B0000; /* Pagoda red on hover */
+            color: #8B0000; 
         }
 
         button:active {
@@ -119,7 +118,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-        // --- Pre-written Content Arrays (Fixed the Connection Error!) ---
+        
         const haikus = [
             "Red roof greets the sky,\nPetals drift on silent wind,\nSpring's soft, passing breath.",
             "Stone path holds the sun,\nShadows lengthen, stillness deep,\nAncient wood awaits.",
@@ -142,13 +141,12 @@
         function showResponse(text) {
             const responseArea = document.getElementById('response-area');
             
-            // Fade out, update content, and fade back in
             responseArea.classList.remove('visible');
             setTimeout(() => {
-                // Replace newlines with breaks for display in HTML
+                
                 responseArea.innerHTML = text.replace(/\n/g, '<br>'); 
                 responseArea.classList.add('visible');
-            }, 500); // Wait for fade-out before updating
+            }, 500); 
         }
 
         function generateHaiku() {
@@ -161,8 +159,6 @@
             showResponse(wisdomQuotes[index]);
         }
 
-
-        // --- Three.js Scene Setup (Same as before) ---
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0xdfebf5, 0.02);
         scene.background = new THREE.Color(0xdfebf5);
@@ -183,7 +179,7 @@
         controls.minDistance = 5;
         controls.maxDistance = 50;
 
-        // --- Lighting ---
+        
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
 
@@ -200,7 +196,7 @@
         dirLight.shadow.camera.bottom = -50;
         scene.add(dirLight);
 
-        // --- Materials ---
+        
         const redMat = new THREE.MeshStandardMaterial({ color: 0x8B0000, roughness: 0.7 });
         const darkRoofMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.9 });
         const woodMat = new THREE.MeshStandardMaterial({ color: 0x5D4037, roughness: 0.8 });
@@ -215,7 +211,7 @@
         });
         const pathMat = new THREE.MeshStandardMaterial({ color: 0x9e7b6d, roughness: 1.0 }); 
         
-        // --- Ground ---
+        
         const groundGeo = new THREE.PlaneGeometry(200, 200);
         const groundMat = new THREE.MeshStandardMaterial({ color: 0x7C9473, roughness: 1 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -223,7 +219,7 @@
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // --- Helper for Curved Roof ---
+        
         function createCurvedRoof(width, height) {
             const group = new THREE.Group();
             const steps = 4;
@@ -248,12 +244,12 @@
             return group;
         }
 
-        // --- Pagoda Builder Function ---
+        
         function createPagoda(x, z) {
             const pagodaGroup = new THREE.Group();
             pagodaGroup.position.set(x, 0, z);
 
-            // Base Platform
+            
             const baseGeo = new THREE.BoxGeometry(14, 0.8, 14);
             const base = new THREE.Mesh(baseGeo, stoneMat);
             base.position.y = 0.4;
@@ -275,7 +271,7 @@
             for(let i = 0; i < levels; i++) {
                 const levelHeight = 2.5;
                 
-                // 1. Walls (Core)
+                
                 const coreWidth = size * 0.55;
                 const coreGeo = new THREE.BoxGeometry(coreWidth, levelHeight, coreWidth);
                 const core = new THREE.Mesh(coreGeo, redMat);
@@ -284,7 +280,7 @@
                 core.receiveShadow = true;
                 pagodaGroup.add(core);
 
-                // 2. Corner Pillars
+                
                 const pillarWidth = 0.4;
                 const pillarGeo = new THREE.BoxGeometry(pillarWidth, levelHeight, pillarWidth);
                 const pDist = coreWidth / 2 + 0.05;
@@ -301,9 +297,9 @@
                     pagodaGroup.add(p);
                 });
 
-                // 3. Windows (Low Poly Shoji Style)
+                
                 for(let side=0; side<4; side++) {
-                    if (i === 0 && side === 0) continue; // Skip front window on Level 0
+                    if (i === 0 && side === 0) continue; 
 
                     const winGroup = new THREE.Group();
                     
@@ -332,7 +328,7 @@
                     pagodaGroup.add(winGroup);
                 }
 
-                // 4. Railing/Balcony
+                
                 const balconyWidth = size * 0.8;
                 const balconyGeo = new THREE.BoxGeometry(balconyWidth, 0.2, balconyWidth);
                 const balcony = new THREE.Mesh(balconyGeo, woodMat);
@@ -340,7 +336,7 @@
                 balcony.receiveShadow = true;
                 pagodaGroup.add(balcony);
                 
-                // Add little railings on top of balcony
+                
                 if (i > 0) {
                     const railHeight = 0.6;
                     const rThick = 0.1;
@@ -356,7 +352,7 @@
                 }
 
 
-                // 5. Door (Only on Level 1)
+                
                 if(i === 0) {
                     const doorGeo = new THREE.BoxGeometry(1.5, 2.0, 0.2);
                     const doorFrame = new THREE.Mesh(doorGeo, woodMat);
@@ -364,7 +360,7 @@
                     pagodaGroup.add(doorFrame);
                 }
 
-                // 6. Roof (New "Swooped" Look)
+                
                 const roofWidth = size * 1.3;
                 const roofHeight = 1.8; 
                 
@@ -376,7 +372,7 @@
                 size *= 0.75;
             }
 
-            // Spire
+            
             const spireBaseGeo = new THREE.BoxGeometry(1, 0.5, 1);
             const spireBase = new THREE.Mesh(spireBaseGeo, darkRoofMat);
             spireBase.position.y = currentY;
@@ -392,7 +388,7 @@
 
         createPagoda(0, 0);
         
-        // --- Path Builder Function ---
+    
         function createPaths() {
             const pathGroup = new THREE.Group();
             const pathHeight = 0.01; 
@@ -412,13 +408,13 @@
 
         createPaths();
 
-        // --- Cherry Blossom Trees (Sakura) ---
+        
         function createTree(x, z, scale = 1) {
             const treeGroup = new THREE.Group();
             treeGroup.position.set(x, 0, z);
             treeGroup.scale.set(scale, scale, scale);
 
-            // Trunk
+            
             const trunkGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 6);
             const trunk = new THREE.Mesh(trunkGeo, woodMat);
             trunk.position.y = 2;
@@ -426,7 +422,6 @@
             trunk.receiveShadow = true;
             treeGroup.add(trunk);
 
-            // Leaves (Cloud of pink spheres)
             const leaveMat = new THREE.MeshStandardMaterial({ color: 0xffb7c5, flatShading: true });
             
             const positions = [
@@ -448,7 +443,6 @@
             scene.add(treeGroup);
         }
 
-        // Scatter more trees (11 total now)
         const treePositions = [
             [15, 10], [-12, 15], [12, -12], [-15, -10],
             [25, 5], [-20, 8], [8, 22], [-5, -20],
@@ -461,7 +455,6 @@
         });
 
 
-        // --- Falling Petals Particle System ---
         const petalCount = 1000;
         const petalGeo = new THREE.BufferGeometry();
         const petalPositions = [];
@@ -491,7 +484,6 @@
         scene.add(particleSystem);
 
 
-        // --- Animation Loop ---
         const loading = document.getElementById('loading');
         let loaded = false;
 
@@ -501,25 +493,25 @@
             if(!loaded) {
                 loading.style.opacity = 0;
                 loaded = true;
-                // Initialize the response box after the scene loads
+    
                 document.getElementById('response-area').classList.add('visible');
             }
 
             controls.update();
 
-            // Animate particles
+            
             const positions = particleSystem.geometry.attributes.position.array;
             for(let i=0; i < petalCount; i++) {
                 const yIdx = i * 3 + 1;
                 
-                // Update Y
+                
                 positions[yIdx] += petalVelocities[i * 3 + 1];
                 
-                // Update X and Z drift (subtle wind effect)
+                
                 positions[i * 3] += Math.sin(Date.now() * 0.001 + i) * 0.01;
                 positions[i * 3 + 2] += Math.cos(Date.now() * 0.001 + i) * 0.01;
 
-                // Reset if below ground
+                
                 if(positions[yIdx] < 0) {
                     positions[yIdx] = 30;
                     positions[i*3] = (Math.random() - 0.5) * 60;
@@ -531,14 +523,14 @@
             renderer.render(scene, camera);
         }
 
-        // Handle Resize
+        
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Start the animation loop when the script runs
+    
         animate();
 
     </script>
